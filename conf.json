@@ -4,5 +4,7 @@
 "BaseDN":   "DC=agp,DC=ru",
 "BindDN":   "User_AD@agp.ru",
 "PasswdDN":  "Asz243Plo98ADR",
-"Debug":    true
+"Debug":    true,
+"Listenserv":    "0.0.0.0",
+"Listenport":    9000
 }

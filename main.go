@@ -8,17 +8,20 @@ import (
 )
 
 type Configuration struct {
-	Server   string
-	Port     int
-	BaseDN   string
-	BindDN   string
-	PasswdDN string
-	Debug    bool
+	Server     string
+	Port       int
+	BaseDN     string
+	BindDN     string
+	PasswdDN   string
+	Debug      bool
+	Listenserv string
+	Listenport int
 }
 
 // set State output log
 var Debug = true
 var ldap_conf = ldap_suppor{}
+var server_conf = ServerConf{}
 
 func set_config(path string, security auth.SecurityType) error {
 	configuration := Configuration{}
@@ -32,13 +35,8 @@ func set_config(path string, security auth.SecurityType) error {
 	}
 	ldap_conf.Adm.BindDN = configuration.BindDN
 	ldap_conf.Adm.PasswordDN = configuration.PasswdDN
-	// config =  = &auth.Config{
-	// 	Server:   "192.38.1.200",
-	// 	Port:     389,
-	// 	BaseDN:   "DC=agp,DC=ru",
-	// 	Security: security,
-	// }
-
+	server_conf.host = configuration.Listenserv
+	server_conf.port = configuration.Listenport
 	return err
 }
 
@@ -52,4 +50,6 @@ func init() {
 // var attr []string{"sn",}
 func main() {
 	fmt.Println("Start")
+	server_conf.init_server()
+
 }

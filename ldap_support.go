@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 
 	auth "github.com/korylprince/go-ad-auth"
 )
@@ -45,7 +47,8 @@ func (ld *ldap_suppor) test_autch(username string, password string) int {
 	return 0
 }
 
-func (ld *ldap_suppor) search(upn string, short bool) error {
+func (ld *ldap_suppor) search(upn string, short bool) map[string]string {
+	m := make(map[string]string)
 	atr_full := []string{
 		"sAMAccountName", "givenName", "cn", "initials", "displayName", "memberOf", "department", "mail", "telephoneNumber", "description",
 	}
@@ -62,12 +65,16 @@ func (ld *ldap_suppor) search(upn string, short bool) error {
 	ent, err := ld.conn.Search(fmt.Sprintf("(userPrincipalName=%s)", upn), atr, 0)
 	if err != nil {
 		fmt.Println("Valid search: Expected err to be nil but got:", err)
-		return err
+		// return err
 	}
+
 	for _, entry := range ent {
-		entry.Print()
+		for _, attr := range entry.Attributes {
+			m[attr.Name] = strings.Join(attr.Values, "")
+		}
+
 	}
-	return err
+	return m
 }
 
 func (ld *ldap_suppor) conn_init() error {
@@ -86,7 +93,7 @@ func (ld *ldap_suppor) conn_init() error {
 	conn, err := config.Connect()
 	if err != nil {
 		log.Panic("Error connecting to server:", err)
-		return err
+		// return err
 	}
 	// set glob conn
 	ld.conn = conn
@@ -112,12 +119,19 @@ func (ld *ldap_suppor) conn_init() error {
 	for _, entry := range ent {
 		entry.Print()
 	}
-
 	return err
 }
+func (ldap_suppor) convers(m map[string]string) []byte {
+	jsonString, err := json.Marshal(m)
+	if err != nil {
+		log.Panic("Not convers map to json:", err)
+	}
 
-func (l *ldap_suppor) get_value(username string, short bool) error {
+	return jsonString
+}
+
+func (l *ldap_suppor) get_value(username string, short bool) []byte {
 	fmt.Println(username)
 	upn, _ := l.config.UPN(username)
-	return l.search(upn, short)
+	return l.convers(l.search(upn, short))
 }
