@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	auth "github.com/korylprince/go-ad-auth"
 )
@@ -28,6 +29,20 @@ type ldap_suppor struct {
 	config auth.Config
 	Adm    AdminDN
 	conn   *auth.Conn
+	flag_t bool
+}
+
+func (ld *ldap_suppor) test_conn() {
+	ld.flag_t = true
+	for ld.flag_t {
+		time.Sleep(time.Minute * 3)
+		_, err := ld.conn.Search(fmt.Sprintf("(userPrincipalName=%s)", ld.Adm.BindDN), []string{"sAMAccountName"}, 0)
+		if err != nil {
+			log.Println("Valid search: Expected err to be nil but got:", err)
+			ld.conn_init()
+		}
+		log.Println("Work")
+	}
 }
 
 func (ld *ldap_suppor) test_autch(username string, password string) int {
@@ -121,6 +136,7 @@ func (ld *ldap_suppor) conn_init() error {
 	for _, entry := range ent {
 		entry.Print()
 	}
+	go ld.test_conn()
 	return err
 }
 func (ldap_suppor) convers(m map[string]string) []byte {
@@ -132,15 +148,85 @@ func (ldap_suppor) convers(m map[string]string) []byte {
 	return jsonString
 }
 
+func (ldap_suppor) convers_str(m []string) []byte {
+	jsonString, err := json.Marshal(m)
+	if err != nil {
+		log.Panic("Not convers map to json:", err)
+	}
+
+	return jsonString
+}
 func (l *ldap_suppor) get_value(username string, short bool) []byte {
 	upn, _ := l.config.UPN(username)
 	return l.convers(l.search(upn, short))
 }
 
-func (l *ldap_suppor) get_group(username string, short bool) []byte {
-	// m := make(map[string]string)
-	// upn, _ := l.config.UPN("UvarovaA")Z
-	ent, _ := l.conn.Search("(&(member::=*)(objectClass=person))", []string{"memberof"}, 0)
+func (l *ldap_suppor) get_group_dn(username string, short bool) []byte {
+	upn, _ := l.config.UPN(username)
+	m := make(map[string]string)
+	ent, _ := l.conn.Search(fmt.Sprintf("(userPrincipalName=%s)", upn), []string{"memberof"}, 0)
+
+	for _, entry := range ent {
+		for _, attrs := range entry.Attributes {
+			if attrs.Name == "memberOf" {
+				for _, attr := range attrs.Values {
+					cn, err := l.conn.GroupDN(string(attr))
+					if err == nil {
+						cn = string(cn[3:support_util(cn)])
+						m[cn] = string(l.get_group_attr(cn))
+					}
+				}
+			}
+		}
+	}
+	return l.convers(m)
+}
+func support_util(st string) int {
+	var K int
+	for k, c := range st {
+		if c == ',' {
+			K = k
+			break
+		}
+	}
+	return K
+}
+
+func (l *ldap_suppor) get_group_attr(gr_cn string) string {
+	ent, _ := l.conn.Search("(&(CN="+gr_cn+")(objectClass=group))", []string{"description"}, 0)
+	for _, entry := range ent {
+		for _, attr := range entry.Attributes {
+			if attr.Name == "description" {
+				return attr.Values[0]
+			}
+		}
+	}
+	return ""
+}
+
+func (l *ldap_suppor) get_group_all(short bool) []byte {
+	m := make(map[string]string)
+	ent, _ := l.conn.Search("(&(memberof=*)(objectClass=person))", []string{"memberof"}, 0)
+
+	for _, entry := range ent {
+		for _, attrs := range entry.Attributes {
+			if attrs.Name == "memberOf" {
+				for _, attr := range attrs.Values {
+					cn, err := l.conn.GroupDN(string(attr))
+					if err == nil {
+						cn = string(cn[3:support_util(cn)])
+						m[cn] = string(l.get_group_attr(cn))
+					}
+				}
+			}
+		}
+	}
+	return l.convers(m)
+
+}
+
+func (l *ldap_suppor) get_group_user_member_all(username string, short bool) []byte {
+	ent, _ := l.conn.Search("(&(member=*)(objectClass=group))", []string{"member"}, 0)
 
 	for _, entry := range ent {
 		for _, attrs := range entry.Attributes {
@@ -152,10 +238,5 @@ func (l *ldap_suppor) get_group(username string, short bool) []byte {
 			}
 		}
 	}
-	return []byte("{test}")
-}
-
-func (l *ldap_suppor) get_group_all(short bool) []byte {
-
 	return []byte("{test}")
 }

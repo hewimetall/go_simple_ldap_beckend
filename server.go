@@ -70,7 +70,7 @@ func cont(buf []byte) []byte {
 		date_json = []byte("{}")
 		return date_json
 	}
-	if err := ldap_conf.test_autch(m.Username, m.Password); err != 0 {
+	if err := ldap_conf.test_autch(m.Username, m.Password); err != 0 && m.Do != "2" {
 		date_json = []byte("{}")
 		return date_json
 	}
@@ -80,9 +80,11 @@ func cont(buf []byte) []byte {
 	case "1":
 		date_json = ldap_conf.get_value(m.Username, true)
 	case "2":
-		date_json = ldap_conf.get_group(m.Username, true)
+		date_json = ldap_conf.get_group_dn(m.Username, true)
 	case "3":
 		date_json = ldap_conf.get_group_all(true)
+		write_dump("get_group_all", date_json)
+		date_json = []byte("Ok")
 	default:
 		date_json = []byte("{}")
 	}

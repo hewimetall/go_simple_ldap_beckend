@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"log"
 
 	auth "github.com/korylprince/go-ad-auth"
 	gonfig "github.com/tkanos/gonfig"
@@ -39,7 +41,14 @@ func set_config(path string, security auth.SecurityType) error {
 	server_conf.port = configuration.Listenport
 	return err
 }
+func write_dump(file_name string, d1 []byte) error {
 
+	err := ioutil.WriteFile("./dump/"+file_name, d1, 0644)
+	if err != nil {
+		log.Panic(err)
+	}
+	return err
+}
 func init() {
 	set_config("./conf.json", auth.SecurityNone)
 	ldap_conf.conn_init()
@@ -49,5 +58,4 @@ func init() {
 func main() {
 	fmt.Println("Start")
 	server_conf.init_server()
-
 }
