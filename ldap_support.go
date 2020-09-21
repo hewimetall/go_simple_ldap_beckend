@@ -64,7 +64,9 @@ func (ld *ldap_suppor) search(upn string, short bool) map[string]string {
 
 	ent, err := ld.conn.Search(fmt.Sprintf("(userPrincipalName=%s)", upn), atr, 0)
 	if err != nil {
-		fmt.Println("Valid search: Expected err to be nil but got:", err)
+		log.Panic("Valid search: Expected err to be nil but got:", err)
+		ld.conn_init()
+		ld.search(upn, short)
 		// return err
 	}
 
@@ -131,7 +133,29 @@ func (ldap_suppor) convers(m map[string]string) []byte {
 }
 
 func (l *ldap_suppor) get_value(username string, short bool) []byte {
-	fmt.Println(username)
 	upn, _ := l.config.UPN(username)
 	return l.convers(l.search(upn, short))
+}
+
+func (l *ldap_suppor) get_group(username string, short bool) []byte {
+	// m := make(map[string]string)
+	// upn, _ := l.config.UPN("UvarovaA")Z
+	ent, _ := l.conn.Search("(&(member::=*)(objectClass=person))", []string{"memberof"}, 0)
+
+	for _, entry := range ent {
+		for _, attrs := range entry.Attributes {
+			if attrs.Name == "memberOf" {
+				for _, attr := range attrs.Values {
+					_, cn := l.conn.GroupDN(string(attr))
+					log.Println(string(attr), cn)
+				}
+			}
+		}
+	}
+	return []byte("{test}")
+}
+
+func (l *ldap_suppor) get_group_all(short bool) []byte {
+
+	return []byte("{test}")
 }

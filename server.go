@@ -15,6 +15,13 @@ import (
 	"net"
 )
 
+/*
+	DO
+		-0 get short atr for user
+		-1 get full atr for user
+		-2 get cn group for user
+		-3 get full group
+*/
 type User struct {
 	Username string
 	Password string
@@ -47,17 +54,44 @@ func (conf *ServerConf) init_server() error {
 	return err
 }
 
-func stream(pc net.PacketConn, addr net.Addr, buf []byte) {
+func cont(buf []byte) []byte {
+	/*
+		DO
+			-0 get short atr for user
+			-1 get full atr for user
+			-2 get cn group for user
+			-3 get full group
+	*/
 	var m User
 	var date_json []byte
-	json.Unmarshal(buf, &m)
-	fmt.Println(m)
-	if err := ldap_conf.test_autch(m.Username, m.Password); err == 0 {
-		date_json = ldap_conf.get_value(m.Username, true)
-	} else {
-		date_json = []byte("fail")
+	err := json.Unmarshal(buf, &m)
+	if err != nil {
+		log.Println("stream", err)
+		date_json = []byte("{}")
+		return date_json
 	}
+	if err := ldap_conf.test_autch(m.Username, m.Password); err != 0 {
+		date_json = []byte("{}")
+		return date_json
+	}
+	switch os := m.Do; os {
+	case "0":
+		date_json = ldap_conf.get_value(m.Username, true)
+	case "1":
+		date_json = ldap_conf.get_value(m.Username, true)
+	case "2":
+		date_json = ldap_conf.get_group(m.Username, true)
+	case "3":
+		date_json = ldap_conf.get_group_all(true)
+	default:
+		date_json = []byte("{}")
+	}
+	return date_json
+}
 
+func stream(pc net.PacketConn, addr net.Addr, buf []byte) {
+	var date_json []byte
+	date_json = cont(buf)
 	pc.WriteTo(date_json, addr)
 }
 

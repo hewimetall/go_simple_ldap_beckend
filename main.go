@@ -43,8 +43,6 @@ func set_config(path string, security auth.SecurityType) error {
 func init() {
 	set_config("./conf.json", auth.SecurityNone)
 	ldap_conf.conn_init()
-	// ldap_conf.get_value("KodolovaE@agp.ru", true)
-
 }
 
 // var attr []string{"sn",}

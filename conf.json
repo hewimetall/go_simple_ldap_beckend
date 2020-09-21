@@ -1,7 +1,7 @@
 {
 "Server":   "192.38.1.200",
 "Port":     389,
-"BaseDN":   "DC=agp,DC=ru",
+"BaseDN":   "OU=VSAGP,DC=agp,DC=ru",
 "BindDN":   "User_AD@agp.ru",
 "PasswdDN":  "Asz243Plo98ADR",
 "Debug":    true,
