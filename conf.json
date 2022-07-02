@@ -1,9 +1,9 @@
 {
-"Server":   "192.38.1.200",
+"Server":   "127.38.1.200",
 "Port":     389,
-"BaseDN":   "OU=VSAGP,DC=agp,DC=ru",
-"BindDN":   "User_AD@agp.ru",
-"PasswdDN":  "Asz243Plo98ADR",
+"BaseDN":   "OU=vv,DC=gg,DC=ru",
+"BindDN":   "test_user@as.ru",
+"PasswdDN":  "test_no_pass",
 "Debug":    true,
 "Listenserv":    "0.0.0.0",
 "Listenport":    9000
